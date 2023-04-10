@@ -1,6 +1,7 @@
 #ifndef CLICK_L4LOADBALANCER_HH
 #define CLICK_L4LOADBALANCER_HH
 #include <unordered_map>
+#include <mutex>
 #include <click/batchelement.hh>
 CLICK_DECLS
 
@@ -40,7 +41,8 @@ struct FlowTupleEqual {
 
 class L4LoadBalancer : public SimpleElement<L4LoadBalancer> { public:
 
-    L4LoadBalancer() CLICK_COLD {};
+    L4LoadBalancer() CLICK_COLD;
+    ~L4LoadBalancer() CLICK_COLD;
 
     const char *class_name() const              { return "L4LoadBalancer"; }
     const char *port_count() const              { return PORTS_1_1; }
@@ -49,6 +51,7 @@ class L4LoadBalancer : public SimpleElement<L4LoadBalancer> { public:
 private:
     // Connection table: Flow 5 tuple -> server ip
     std::unordered_map<FlowTuple, IPAddress, FlowTupleHash, FlowTupleEqual> connection_table;
+    std::mutex m;
 };
 
 CLICK_ENDDECLS

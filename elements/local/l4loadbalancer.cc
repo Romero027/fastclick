@@ -4,6 +4,16 @@ CLICK_DECLS
 
 #define SERVER_IP 0xC0A80001
 
+L4LoadBalancer::L4LoadBalancer()
+{
+}
+
+L4LoadBalancer::~L4LoadBalancer()
+{
+    connection_table.clear();
+}
+
+
 Packet *
 L4LoadBalancer::simple_action(Packet *p) {
     click_chatter("Received a packet of size %d !", p->length());
@@ -19,6 +29,7 @@ L4LoadBalancer::simple_action(Packet *p) {
     FlowTuple f = {src_ip, dst_ip, src_port, dst_port, protocol};
 
     IPAddress server_ip = IPAddress(SERVER_IP);
+    m.lock();
     if (connection_table.find(f) == connection_table.end()) {
         // new flow
         connection_table[f] = server_ip;
@@ -26,6 +37,7 @@ L4LoadBalancer::simple_action(Packet *p) {
         // existing flow
         server_ip = connection_table[f];
     }   
+    m.unlock();
 
     WritablePacket* q =p->uniqueify();
     p = q;
