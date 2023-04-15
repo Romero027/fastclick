@@ -3,9 +3,9 @@
 CLICK_DECLS
 
 #define SERVER_IP 0xC0A80001
-
+                      
 uint32_t current_ip = 0x0A000001; // initialize to 10.0.0.1
-uint16_t current_port = 0; // initialize to 0
+uint16_t current_port = 10000; // initialize to 0
 
 L4LoadBalancer::L4LoadBalancer()
 {
@@ -18,7 +18,7 @@ L4LoadBalancer::~L4LoadBalancer()
 
 uint32_t get_next_ip() {
     current_ip++;
-    if (current_ip > 0x0A0000FE) { // wrap around to 10.0.0.1
+    if (current_ip > 0x0A00FFFE) { // wrap around to 10.0.0.1
         current_ip = 0x0A000001;
     }
     return current_ip;
@@ -26,8 +26,8 @@ uint32_t get_next_ip() {
 
 uint16_t get_next_port() {
     current_port++;
-    if (current_port > 80) { 
-        current_port = 0;
+    if (current_port > 60000) { 
+        current_port = 10000;
     }
     return current_port;
 }
