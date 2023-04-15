@@ -4,6 +4,9 @@ CLICK_DECLS
 
 #define SERVER_IP 0xC0A80001
 
+uint32_t current_ip = 0x0A000001; // initialize to 10.0.0.1
+uint16_t current_port = 0; // initialize to 0
+
 L4LoadBalancer::L4LoadBalancer()
 {
 }
@@ -13,6 +16,21 @@ L4LoadBalancer::~L4LoadBalancer()
     connection_table.clear();
 }
 
+uint32_t get_next_ip() {
+    current_ip++;
+    if (current_ip > 0x0A0000FE) { // wrap around to 10.0.0.1
+        current_ip = 0x0A000001;
+    }
+    return current_ip;
+}
+
+uint16_t get_next_port() {
+    current_port++;
+    if (current_port > 80) { 
+        current_port = 0;
+    }
+    return current_port;
+}
 
 Packet *
 L4LoadBalancer::simple_action(Packet *p) {
@@ -28,24 +46,29 @@ L4LoadBalancer::simple_action(Packet *p) {
     uint8_t protocol = iph->ip_p;
     FlowTuple f = {src_ip, dst_ip, src_port, dst_port, protocol};
 
-    IPAddress server_ip = IPAddress(SERVER_IP);
-    m.lock();
+    IPAddress server_ip;
+    uint16_t server_port;
     if (connection_table.find(f) == connection_table.end()) {
         // new flow
-        connection_table[f] = server_ip;
+        server_ip = IPAddress(get_next_ip());
+        server_port = get_next_port();
+        connection_table[f] = {server_ip, server_port};
     } else {
         // existing flow
-        server_ip = connection_table[f];
+        server_ip = connection_table[f].first;
+        server_port = connection_table[f].second;
     }   
-    m.unlock();
+    // m.unlock();
 
     WritablePacket* q =p->uniqueify();
     p = q;
 
     q->ip_header()->ip_dst = server_ip;
-    p->set_dst_ip_anno(server_ip);
+    q->tcp_header()->th_dport = server_port;
+    // p->set_dst_ip_anno(server_ip);
 
     click_chatter("Destination IP is %u\n", p->ip_header()->ip_dst.s_addr);
+    click_chatter("Destination Port is %u\n", p->tcp_header()->th_dport);
     return p;
 }
 

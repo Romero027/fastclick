@@ -50,8 +50,8 @@ class L4LoadBalancer : public SimpleElement<L4LoadBalancer> { public:
     Packet *simple_action(Packet *);
 private:
     // Connection table: Flow 5 tuple -> server ip
-    std::unordered_map<FlowTuple, IPAddress, FlowTupleHash, FlowTupleEqual> connection_table;
-    std::mutex m;
+    std::unordered_map<FlowTuple, std::pair<IPAddress, uint16_t>, FlowTupleHash, FlowTupleEqual> connection_table;
+    // std::mutex m;
 };
 
 CLICK_ENDDECLS
