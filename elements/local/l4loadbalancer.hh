@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <mutex>
 #include <click/batchelement.hh>
+#include <click/hashtable.hh>
 CLICK_DECLS
 
 
@@ -18,25 +19,38 @@ struct FlowTuple {
                 src_port == other.src_port && dst_port == other.dst_port &&
                 protocol == other.protocol);
     }
+
+    inline hashcode_t hashcode() const;
 };
 
-struct FlowTupleHash {
-    std::size_t operator()(const FlowTuple& ft) const {
-        std::size_t hash = 17;
-        hash = hash * 31 + std::hash<unsigned int>()(ft.src_ip);
-        hash = hash * 31 + std::hash<unsigned int>()(ft.dst_ip);
-        hash = hash * 31 + std::hash<unsigned short>()(ft.src_port);
-        hash = hash * 31 + std::hash<unsigned short>()(ft.dst_port);
-        hash = hash * 31 + std::hash<unsigned char>()(ft.protocol);
-        return hash;
-    }
+struct ServerAddr {
+    IPAddress addr;
+    uint16_t port;
 };
 
-struct FlowTupleEqual {
-    bool operator()(const FlowTuple& ft1, const FlowTuple& ft2) const {
-        return (ft1 == ft2);
-    }
-};
+// struct FlowTupleHash {
+//     std::size_t operator()(const FlowTuple& ft) const {
+//         std::size_t hash = 17;
+//         hash = hash * 31 + std::hash<unsigned int>()(ft.src_ip);
+//         hash = hash * 31 + std::hash<unsigned int>()(ft.dst_ip);
+//         hash = hash * 31 + std::hash<unsigned short>()(ft.src_port);
+//         hash = hash * 31 + std::hash<unsigned short>()(ft.dst_port);
+//         hash = hash * 31 + std::hash<unsigned char>()(ft.protocol);
+//         return hash;
+//     }
+// };
+
+#define ROT(v, r) ((v)<<(r) | ((unsigned)(v))>>(32-(r)))
+
+inline hashcode_t FlowTuple::hashcode() const
+{
+    // more complicated hashcode, but causes less collision
+
+    hashcode_t sx = CLICK_NAME(hashcode)(src_ip);
+    hashcode_t dx = CLICK_NAME(hashcode)(dst_ip);
+    return (ROT(sx, (src_port % 16) + 1) ^ ROT(dx, 31 - (dst_port % 16)))
+	^ ((dst_port << 16) | src_port);
+}
 
 
 class L4LoadBalancer : public SimpleElement<L4LoadBalancer> { public:
@@ -50,7 +64,8 @@ class L4LoadBalancer : public SimpleElement<L4LoadBalancer> { public:
     Packet *simple_action(Packet *);
 private:
     // Connection table: Flow 5 tuple -> server ip
-    std::unordered_map<FlowTuple, std::pair<IPAddress, uint16_t>, FlowTupleHash, FlowTupleEqual> connection_table;
+    HashTable<FlowTuple, ServerAddr> connection_table;
+    // std::unordered_map<FlowTuple, std::pair<IPAddress, uint16_t>, FlowTupleHash, FlowTupleEqual> connection_table;
     // std::mutex m;
 };
 

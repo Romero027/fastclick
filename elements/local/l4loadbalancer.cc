@@ -34,7 +34,7 @@ uint16_t get_next_port() {
 
 Packet *
 L4LoadBalancer::simple_action(Packet *p) {
-    click_chatter("Received a packet of size %d !", p->length());
+    // click_chatter("Received a packet of size %d !", p->length());
 
     // Extract 5 tuple
     const click_ip *iph = p->ip_header();
@@ -55,8 +55,8 @@ L4LoadBalancer::simple_action(Packet *p) {
         connection_table[f] = {server_ip, server_port};
     } else {
         // existing flow
-        server_ip = connection_table[f].first;
-        server_port = connection_table[f].second;
+        server_ip = connection_table[f].addr;
+        server_port = connection_table[f].port;
     }   
     // m.unlock();
 
@@ -67,8 +67,8 @@ L4LoadBalancer::simple_action(Packet *p) {
     q->tcp_header()->th_dport = server_port;
     // p->set_dst_ip_anno(server_ip);
 
-    click_chatter("Destination IP is %u\n", p->ip_header()->ip_dst.s_addr);
-    click_chatter("Destination Port is %u\n", p->tcp_header()->th_dport);
+    // click_chatter("Destination IP is %u\n", p->ip_header()->ip_dst.s_addr);
+    // click_chatter("Destination Port is %u\n", p->tcp_header()->th_dport);
     return p;
 }
 
