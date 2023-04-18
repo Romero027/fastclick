@@ -74,3 +74,4 @@ L4LoadBalancer::simple_action(Packet *p) {
 
 CLICK_ENDDECLS
 EXPORT_ELEMENT(L4LoadBalancer)
+ELEMENT_MT_SAFE(L4LoadBalancer)

@@ -38,3 +38,4 @@ HeavyHitter::simple_action(Packet *p) {
 
 CLICK_ENDDECLS
 EXPORT_ELEMENT(HeavyHitter)
+ELEMENT_MT_SAFE(HeavyHitter)
