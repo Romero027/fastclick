@@ -187,7 +187,8 @@ int RXQueueDevice::configure_rx(int numa_node, int minqueues, int maxqueues, Err
     _this_node = 0;
     usable_threads.assign(master()->nthreads(),false);
 #else
-    usable_threads.assign(min(Numa::get_max_cpus(), master()->nthreads()),false);
+    // usable_threads.assign(min(Numa::get_max_cpus(), master()->nthreads()),false);
+    usable_threads.assign(min(Numa::get_max_cpus(), master()->nthreads()),true);
     if (numa_node < 0) numa_node = 0;
     _this_node = numa_node;
 #endif
@@ -333,7 +334,7 @@ int RXQueueDevice::initialize_rx(ErrorHandler *errh) {
 
     cores_in_node = usable_threads.weight();
 
-    //click_chatter("_maxthreads %d, cores_in_node %d, nthreads() %d, use_nodes %d, _this_node %d, inputs_count %d",_maxthreads,cores_in_node,master()->nthreads(),use_nodes,_this_node,inputs_count[_this_node]);
+    click_chatter("_maxthreads %d, cores_in_node %d, nthreads() %d, use_nodes %d, _this_node %d, inputs_count %d",_maxthreads,cores_in_node,master()->nthreads(),use_nodes,_this_node,inputs_count[_this_node]);
     if (_maxthreads == -1) {
        assert(use_nodes > 0);
        if (_scale_parallel)

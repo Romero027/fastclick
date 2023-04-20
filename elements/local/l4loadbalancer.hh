@@ -1,9 +1,7 @@
 #ifndef CLICK_L4LOADBALANCER_HH
 #define CLICK_L4LOADBALANCER_HH
-#include <unordered_map>
-#include <mutex>
 #include <click/batchelement.hh>
-#include <click/hashtable.hh>
+#include <click/hashtablemp.hh>
 CLICK_DECLS
 
 
@@ -28,18 +26,6 @@ struct ServerAddr {
     uint16_t port;
 };
 
-// struct FlowTupleHash {
-//     std::size_t operator()(const FlowTuple& ft) const {
-//         std::size_t hash = 17;
-//         hash = hash * 31 + std::hash<unsigned int>()(ft.src_ip);
-//         hash = hash * 31 + std::hash<unsigned int>()(ft.dst_ip);
-//         hash = hash * 31 + std::hash<unsigned short>()(ft.src_port);
-//         hash = hash * 31 + std::hash<unsigned short>()(ft.dst_port);
-//         hash = hash * 31 + std::hash<unsigned char>()(ft.protocol);
-//         return hash;
-//     }
-// };
-
 #define ROT(v, r) ((v)<<(r) | ((unsigned)(v))>>(32-(r)))
 
 inline hashcode_t FlowTuple::hashcode() const
@@ -53,8 +39,8 @@ inline hashcode_t FlowTuple::hashcode() const
 }
 
 
-class L4LoadBalancer : public SimpleElement<L4LoadBalancer> { public:
-
+class L4LoadBalancer : public BatchElement { 
+public:
     L4LoadBalancer() CLICK_COLD;
     ~L4LoadBalancer() CLICK_COLD;
 
@@ -62,11 +48,10 @@ class L4LoadBalancer : public SimpleElement<L4LoadBalancer> { public:
     const char *port_count() const              { return PORTS_1_1; }
 
     Packet *simple_action(Packet *);
-private:
+    void push_batch(int, PacketBatch * batch) override;
     // Connection table: Flow 5 tuple -> server ip
-    HashTable<FlowTuple, ServerAddr> connection_table;
+    HashTableMP<FlowTuple, ServerAddr> *connection_table;
     // std::unordered_map<FlowTuple, std::pair<IPAddress, uint16_t>, FlowTupleHash, FlowTupleEqual> connection_table;
-    // std::mutex m;
 };
 
 CLICK_ENDDECLS

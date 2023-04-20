@@ -1,9 +1,12 @@
 #ifndef CLICK_HEAVYHITTER_HH
 #define CLICK_HEAVYHITTER_HH
 #include <click/batchelement.hh>
-#include <click/hashtable.hh>
+#include <click/hashtablemp.hh>
+#include <click/batchbuilder.hh>
+#include <click/flow/flowelement.hh>
 CLICK_DECLS
 
+class DPDKDevice;
 
 struct FlowTupleHH {
     uint32_t src_ip;    // Source IP address
@@ -34,18 +37,20 @@ inline hashcode_t FlowTupleHH::hashcode() const
 	^ ((dst_port << 16) | src_port);
 }
 
-
-class HeavyHitter : public SimpleElement<HeavyHitter> { public:
+class HeavyHitter : public BatchElement {
+public:
 
     HeavyHitter() CLICK_COLD;
     ~HeavyHitter() CLICK_COLD;
 
     const char *class_name() const              { return "HeavyHitter"; }
-    const char *port_count() const              { return PORTS_1_1; }
+    const char *port_count() const              { return "1/1"; }
 
+    // int initialize(ErrorHandler *errh) override CLICK_COLD;
     Packet *simple_action(Packet *);
-private:
-    HashTable<FlowTupleHH, uint64_t> count_table;
+    void push_batch(int, PacketBatch * batch) override;
+    // void process(Packet* p, BatchBuilder& b);
+    HashTableMP<FlowTupleHH, int64_t> *count_table;
 };
 
 CLICK_ENDDECLS
