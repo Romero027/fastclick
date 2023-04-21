@@ -1,7 +1,7 @@
 #ifndef CLICK_DOSDEFENDER_HH
 #define CLICK_DOSDEFENDER_HH
 #include <click/batchelement.hh>
-#include <click/hashtable.hh>
+#include <click/hashtablemp.hh>
 #include <time.h>
 CLICK_DECLS
 
@@ -41,7 +41,8 @@ struct ddval {
     uint32_t pkt_count;
 };
 
-class DosDefender : public SimpleElement<DosDefender> { public:
+class DosDefender : public BatchElement { 
+public:
 
     DosDefender() CLICK_COLD;
     ~DosDefender() CLICK_COLD;
@@ -50,8 +51,8 @@ class DosDefender : public SimpleElement<DosDefender> { public:
     const char *port_count() const              { return PORTS_1_1; }
 
     Packet *simple_action(Packet *);
-private:
-    HashTable<FlowTupleDD, ddval> dos_table;
+    void push_batch(int, PacketBatch * batch) override;
+    HashTableMP<FlowTupleDD, ddval> *dos_table;
 };
 
 CLICK_ENDDECLS

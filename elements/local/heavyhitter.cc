@@ -4,7 +4,7 @@ CLICK_DECLS
                       
 HeavyHitter::HeavyHitter() : count_table(new HashTableMP<FlowTupleHH, int64_t>())
 {
-   count_table->resize_clear(100000000);
+   count_table->resize_clear(40000000);
 }
 
 HeavyHitter::~HeavyHitter()
@@ -30,7 +30,7 @@ HeavyHitter::simple_action(Packet *p) {
     uint16_t dst_port = tcph->th_dport;
     uint8_t protocol = iph->ip_p;
     FlowTupleHH f = {src_ip, dst_ip, src_port, dst_port, protocol};
-
+    // click_chatter("Source IP %d and Destination IP %d", src_ip, dst_ip);
 
     // if (count_table.find(f) == count_table.end()) {i
     //     // new flow
@@ -46,8 +46,8 @@ HeavyHitter::simple_action(Packet *p) {
         //click_chatter("Creating id %d",id);
     });
 
-    int count = *ptr;
-    count_table->insert(f, count);
+    (*ptr)++;
+    // count_table->insert(f, count);
 
     return p;
 }

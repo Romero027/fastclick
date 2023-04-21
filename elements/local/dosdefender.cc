@@ -2,14 +2,23 @@
 #include "dosdefender.hh"
 CLICK_DECLS
                       
-DosDefender::DosDefender()
+DosDefender::DosDefender(): dos_table(new HashTableMP<FlowTupleDD, ddval>())
 {
+    dos_table->resize_clear(40000000);
 }
 
 DosDefender::~DosDefender()
 {
-    dos_table.clear();
+    delete dos_table;
 }
+
+void
+DosDefender::push_batch(int, PacketBatch* batch)
+{
+	EXECUTE_FOR_EACH_PACKET(simple_action, batch);
+	output_push_batch(0, batch);
+}
+
 
 
 Packet *
@@ -25,20 +34,23 @@ DosDefender::simple_action(Packet *p) {
     uint8_t protocol = iph->ip_p;
     FlowTupleDD f = {src_ip, dst_ip, src_port, dst_port, protocol};
 
-    if (dos_table.find(f) == dos_table.end()) {
-        // new flow
-        dos_table[f] = {0, clock(), 1};
-    } else {
-        // existing flow
-        clock_t now = clock();
-        if (now - dos_table[f].ts > 100 && dos_table[f].drop == 0) {
-            if (dos_table[f].pkt_count > 100) {
-                dos_table[f].drop = 1;
-            }
-            dos_table[f].pkt_count = 0;
-            dos_table[f].ts = clock();
+    bool first = false;
+    auto ptr = dos_table->find_create(f, [this,&first](){
+        return ddval{0, clock(), 1};
+    });
+
+    if (!first) {
+        ptr->pkt_count++;
+    }
+
+    clock_t now = clock();
+    if (now - ptr->ts > 100 && ptr->drop == 0) {
+        if (ptr->pkt_count > 100) {
+            ptr->drop = 1;
         }
-    }   
+        ptr->pkt_count = 0;
+        ptr->ts = clock();
+    }
 
     return p;
 }
